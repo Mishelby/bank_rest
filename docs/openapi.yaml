@@ -1,1 +1,377 @@
-# Здесь будет OpenAPI описание всех доступных эндпоинтов и моделей данных.
+openapi: 3.1.0
+info:
+  title: Bank REST API
+  version: v0
+servers:
+  - url: http://localhost:8080
+    description: Generated server url
+paths:
+  /api/v1/users/{userID}/{cardID}/block:
+    post:
+      tags:
+        - user-controller
+      operationId: requestToBlockCard
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: cardID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardStatusResponse'
+  /api/v1/auth/signup:
+    post:
+      tags:
+        - auth-controller
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponseDto'
+  /api/v1/auth/login:
+    post:
+      tags:
+        - auth-controller
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponseDto'
+  /api/v1/admin/cards/{ownerID}:
+    post:
+      tags:
+        - admin-cards-controller
+      operationId: createCard
+      parameters:
+        - name: ownerID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+  /api/v1/admin/cards/{cardID}/block:
+    patch:
+      tags:
+        - admin-cards-controller
+      operationId: cardOperation
+      parameters:
+        - name: cardID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/cards/{cardID}/activate:
+    patch:
+      tags:
+        - admin-cards-controller
+      operationId: activateCard
+      parameters:
+        - name: cardID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+  /api/v1/users/{userID}/{cardID}:
+    get:
+      tags:
+        - user-controller
+      operationId: getCardByID
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: cardID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+  /api/v1/users/{userID}/{cardID}/balance:
+    get:
+      tags:
+        - user-controller
+      operationId: getUserBalance
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: cardID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: number
+  /api/v1/users/{userID}/cards:
+    get:
+      tags:
+        - user-controller
+      operationId: getAllUserCards
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - BLOCKED
+              - DELETED
+              - EXPIRED
+        - name: expirationDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+  /api/v1/admin/cards:
+    get:
+      tags:
+        - admin-cards-controller
+      operationId: getAllAdminCards
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - BLOCKED
+              - DELETED
+              - EXPIRED
+        - name: ownerID
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: expirationDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+  /api/v1/admin/cards/{cardID}:
+    get:
+      tags:
+        - admin-cards-controller
+      operationId: getCardById
+      parameters:
+        - name: cardID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+    delete:
+      tags:
+        - admin-cards-controller
+      operationId: deleteCard
+      parameters:
+        - name: cardID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/cards/{cardID}/deep-delete:
+    delete:
+      tags:
+        - admin-cards-controller
+      operationId: deepDeleteCard
+      parameters:
+        - name: cardID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    CardStatusResponse:
+      type: object
+      properties:
+        cardID:
+          type: integer
+          format: int64
+        ownerID:
+          type: integer
+          format: int64
+        message:
+          type: string
+    LoginRequestDto:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    SignupResponseDto:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+    LoginResponseDto:
+      type: object
+      properties:
+        jwt:
+          type: string
+        userId:
+          type: integer
+          format: int64
+    CardDto:
+      type: object
+      properties:
+        cardID:
+          type: integer
+          format: int64
+        ownerID:
+          type: integer
+          format: int64
+        number:
+          type: string
+        cardStatus:
+          type: string
+          enum:
+            - ACTIVE
+            - BLOCKED
+            - DELETED
+            - EXPIRED
+        expirationDate:
+          type: string
+          format: date
+        balance:
+          type: number
