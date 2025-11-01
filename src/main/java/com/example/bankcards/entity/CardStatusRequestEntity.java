@@ -20,7 +20,7 @@ public class CardStatusRequestEntity {
     @Column(nullable = false)
     private Long id;
 
-    @Column(name = "card_id", nullable = false)
+    @Column(name = "card_id", nullable = false, unique = true)
     private Long cardID;
 
     @Column(name = "owner_id", nullable = false)

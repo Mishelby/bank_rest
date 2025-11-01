@@ -18,4 +18,12 @@ public interface CardRepository extends CrudRepository<CardEntity, Long>, JpaSpe
             WHERE ce.id = :cardID AND ce.cardStatus = :status
             """)
     Optional<CardEntity> findCardEntityByIDAndStatus(Long cardID, CardStatus status);
+
+
+    @Query("""
+            SELECT ce
+            FROM CardEntity ce
+            WHERE ce.id = :cardID AND ce.owner.id = :userID
+            """)
+    Optional<CardEntity> findCardEntityByCardAndUserID(Long cardID, Long userID);
 }

@@ -4,10 +4,10 @@ import lombok.Getter;
 
 @Getter
 public enum CardOperation {
+    ACTIVATE,
     BLOCK,
-    DEEP_DELETE ,
     DELETE,
-    ACTIVATE;
+    DEEP_DELETE ;
 
     public static CardOperation fromString(String value) {
         for (CardOperation cardOperation : CardOperation.values()) {

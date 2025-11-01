@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.example.bankcards.service.AdminCardServiceTest
--------------------------------------------------------------------------------
-Tests run: 7, Failures: 0, Errors: 0, Skipped: 7, Time elapsed: 0.006 s -- in com.example.bankcards.service.AdminCardServiceTest

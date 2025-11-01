@@ -18,5 +18,4 @@ public enum CardStatus {
 
         throw new IllegalArgumentException("Incorrect CardStatus value: " + value);
     }
-
 }

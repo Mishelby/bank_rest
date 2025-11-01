@@ -2,6 +2,8 @@ package com.example.bankcards.controller;
 
 import com.example.bankcards.entity.dto.CardDto;
 import com.example.bankcards.entity.dto.CardStatusResponse;
+import com.example.bankcards.entity.dto.TransferInfoDto;
+import com.example.bankcards.entity.dto.TransferRequestDto;
 import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -36,19 +38,34 @@ public class UserController {
 
     @PostMapping(path = "/{userID}/{cardID}/block", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<CardStatusResponse> requestToBlockCard(@PathVariable Long userID, @PathVariable Long cardID) {
+    public ResponseEntity<CardStatusResponse> requestToBlockCard(
+            @PathVariable Long userID,
+            @PathVariable Long cardID) {
         return ResponseEntity.ok(userService.requestToBlockCard(userID, cardID));
+    }
+
+    @PostMapping(path = "/{userID}/cards/transfer")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<TransferInfoDto> transferMoney(
+            @PathVariable Long userID,
+            @RequestBody TransferRequestDto request
+    ) {
+        return ResponseEntity.ok(userService.transferMoney(userID, request));
     }
 
     @GetMapping(path = "/{userID}/{cardID}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<CardDto> getCardByID(@PathVariable Long userID, @PathVariable Long cardID) {
+    public ResponseEntity<CardDto> getCardByID(
+            @PathVariable Long userID,
+            @PathVariable Long cardID) {
         return ResponseEntity.ok(userService.findCardByID(userID, cardID));
     }
 
     @GetMapping(path = "/{userID}/{cardID}/balance", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<BigDecimal> getUserBalance(@PathVariable Long userID, @PathVariable Long cardID) {
+    public ResponseEntity<BigDecimal> getUserBalance(
+            @PathVariable Long userID,
+            @PathVariable Long cardID) {
         return ResponseEntity.ok(userService.findUserCardBalance(userID, cardID));
     }
 }
