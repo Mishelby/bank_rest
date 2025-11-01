@@ -9,7 +9,7 @@ import java.util.Base64;
 
 public final class AesGcmEncryptor {
     private static final String ALG = "AES/GCM/NoPadding";
-    private static final int IV_LENGTH = 12; // 96 бит
+    private static final int IV_LENGTH = 12;
     private static final int TAG_LENGTH_BITS = 128;
 
     private final SecretKey key;

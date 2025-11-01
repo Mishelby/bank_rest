@@ -3,10 +3,7 @@ package com.example.bankcards.entity;
 import com.example.bankcards.entity.enums.CardOperation;
 import com.example.bankcards.entity.enums.converter.CardOperationConverter;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "card_status_request")
@@ -14,6 +11,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class CardStatusRequestEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

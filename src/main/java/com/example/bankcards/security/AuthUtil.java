@@ -3,6 +3,7 @@ package com.example.bankcards.security;
 import com.example.bankcards.entity.UserEntity;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +12,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
+@RequiredArgsConstructor
 public class AuthUtil {
+
     @Value("${security.secret}")
     private String jwtSecretKey;
 

@@ -5,5 +5,3 @@ databaseChangeLog:
       file: db/migration/002-create-card-table.yaml
   - include:
       file: db/migration/003-create-card-status-request-table.yaml
-  - include:
-      file: db/migration/004-insert-into-data-table.yaml

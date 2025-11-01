@@ -4,7 +4,6 @@ com\example\bankcards\mapper\UserMapperImpl.class
 com\example\bankcards\controller\UserController.class
 com\example\bankcards\exception\DefaultErrorMessage$FieldError.class
 com\example\bankcards\BankRest.class
-com\example\bankcards\cache\Cache.class
 com\example\bankcards\config\OpenApiConfig.class
 com\example\bankcards\entity\enums\CardOperation.class
 com\example\bankcards\entity\UserEntity.class
@@ -42,7 +41,6 @@ com\example\bankcards\security\JwtAuthFilter.class
 com\example\bankcards\mapper\UserMapper.class
 com\example\bankcards\entity\dto\TransferInfoDto$TransferInfoDtoBuilder.class
 com\example\bankcards\service\AdminCardService$1.class
-com\example\bankcards\cache\CacheEntry$CacheEntryBuilder.class
 com\example\bankcards\config\SecurityConfig.class
 com\example\bankcards\entity\enums\CardStatus.class
 com\example\bankcards\exception\DefaultErrorMessage.class
@@ -52,14 +50,12 @@ com\example\bankcards\util\MaskCardNumber.class
 com\example\bankcards\exception\AuthException.class
 com\example\bankcards\entity\CardEntity.class
 com\example\bankcards\entity\CardStatusRequestEntity.class
-com\example\bankcards\cache\CacheEntry.class
 com\example\bankcards\entity\dto\CardDto.class
 com\example\bankcards\util\AesGcmEncryptor.class
 com\example\bankcards\entity\dto\TransferInfoDto.class
 com\example\bankcards\entity\enums\Role.class
 com\example\bankcards\exception\GlobalExceptionHandler.class
 com\example\bankcards\controller\AdminCardsController.class
-com\example\bankcards\cache\CacheManager.class
 com\example\bankcards\entity\enums\converter\CardOperationConverter.class
 com\example\bankcards\util\KeyStoreManager.class
 com\example\bankcards\entity\dto\LoginResponseDto.class

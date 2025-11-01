@@ -4,7 +4,7 @@ databaseChangeLog:
       author: your_name
       changes:
         - createTable:
-            tableName: card_status_request_entity
+            tableName: card_status_request
             columns:
               - column:
                   name: id
@@ -34,14 +34,14 @@ databaseChangeLog:
 
 
         - addForeignKeyConstraint:
-            baseTableName: card_status_request_entity
+            baseTableName: card_status_request
             baseColumnNames: card_id
             referencedTableName: cards
             referencedColumnNames: id
             constraintName: fk_request_card
 
         - addForeignKeyConstraint:
-            baseTableName: card_status_request_entity
+            baseTableName: card_status_request
             baseColumnNames: owner_id
             referencedTableName: users
             referencedColumnNames: id

@@ -113,7 +113,6 @@ public class UserService {
             Long cardID) throws ConstraintViolationException {
         repositoryHelper.isUserExists(userID);
         var cardEntity = repositoryHelper.findCardEntityByID(cardID);
-        CardStatusResponse.CardStatusResponseBuilder builder = CardStatusResponse.builder();
 
         if (!cardEntity.getOwner().getId().equals(userID)) {
             throw new IllegalArgumentException("Карта не принадлежит данному пользователю!");
@@ -123,13 +122,13 @@ public class UserService {
             throw new IllegalArgumentException("Нельзя заблокировать данную карту!");
         }
 
-        CardStatusRequestEntity statusRequest = new CardStatusRequestEntity();
+        var statusRequest = new CardStatusRequestEntity();
         statusRequest.setStatus(BLOCK);
         statusRequest.setOwnerID(userID);
         statusRequest.setCardID(cardID);
         CardStatusRequestEntity saved = cardStatusRequestRepository.save(statusRequest);
 
-        return builder
+        return CardStatusResponse.builder()
                 .ownerID(saved.getOwnerID())
                 .cardID(saved.getCardID())
                 .message("Заявка на блокировку отправлена!")
