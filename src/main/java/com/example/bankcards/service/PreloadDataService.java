@@ -2,12 +2,14 @@ package com.example.bankcards.service;
 
 import com.example.bankcards.entity.CardStatusRequestEntity;
 import com.example.bankcards.entity.UserEntity;
+import com.example.bankcards.entity.enums.Role;
 import com.example.bankcards.repository.CardStatusRequestRepository;
 import com.example.bankcards.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +25,7 @@ import static com.example.bankcards.entity.enums.Role.USER;
 public class PreloadDataService implements CommandLineRunner {
     private final UserRepository userRepository;
     private final AdminCardService adminCardService;
+    private final PasswordEncoder encoder;
     private final CardStatusRequestRepository cardStatusRequestRepository;
 
     @Override
@@ -34,52 +37,45 @@ public class PreloadDataService implements CommandLineRunner {
 
 
     private void preloadUserList() {
-        UserEntity user1 = UserEntity.builder()
-                .username("user1")
-                .password("password1")
-                .role(USER)
-                .enabled(true)
-                .build();
+        List<UserEntity> allUsers = userRepository.findAll();
+        long countOfUsers = allUsers.stream().filter(u -> USER == u.getRole()).count();
 
-        UserEntity user2 = UserEntity.builder()
-                .username("user2")
-                .password("password2")
-                .role(USER)
-                .enabled(true)
-                .build();
+        if (countOfUsers == 0) {
+            UserEntity user1 = createTestUser("user1", "password1", USER, true, encoder);
+            UserEntity user2 = createTestUser("user2", "password2", USER, true, encoder);
+            UserEntity user3 = createTestUser("user3", "password3", USER, false, encoder);
+            UserEntity user4 = createTestUser("user4", "password4", USER, true, encoder);
+            UserEntity user5 = createTestUser("user5", "password5", USER, true, encoder);
 
-        UserEntity user3 = UserEntity.builder()
-                .username("user3")
-                .password("password3")
-                .role(USER)
-                .enabled(false)
-                .build();
 
-        UserEntity user4 = UserEntity.builder()
-                .username("user4")
-                .password("password4")
-                .role(USER)
-                .enabled(true)
-                .build();
+            userRepository.saveAll(List.of(user1, user2, user3, user4, user5));
+        }
+    }
 
-        UserEntity user5 = UserEntity.builder()
-                .username("user5")
-                .password("password5")
-                .role(USER)
-                .enabled(true)
+    private static UserEntity createTestUser(String username,
+                                             String password,
+                                             Role role,
+                                             boolean enabled,
+                                             PasswordEncoder encoder) {
+        return UserEntity.builder()
+                .username(username)
+                .password(encoder.encode(password))
+                .role(role)
+                .enabled(enabled)
                 .build();
-
-        userRepository.saveAll(List.of(user1, user2, user3, user4, user5));
     }
 
     private void preloadCardForUserList() {
-        Iterable<UserEntity> allUsers = userRepository.findAll();
+        List<UserEntity> allUsers = userRepository.findAllWithCards();
 
-        for (UserEntity user : allUsers) {
-            for (int i = 0; i < 3; i++) {
-                adminCardService.createCard(user.getId());
-            }
-        }
+        allUsers.stream()
+                .filter(user -> user.getCards().isEmpty())
+                .filter(u -> USER == u.getRole())
+                .forEach((UserEntity user) -> {
+                    for (int i = 0; i < 3; i++) {
+                        adminCardService.createCard(user.getId());
+                    }
+                });
     }
 
     private void preloadCardStatusRequestList() {
@@ -102,7 +98,6 @@ public class PreloadDataService implements CommandLineRunner {
 
                 cardStatusRequestRepository.save(statusRequest);
             }
-            counter.getAndIncrement();
         });
     }
 }

@@ -1,10 +1,10 @@
 package com.example.bankcards.entity.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
 @Builder
 public record LoginRequestDto(
-        String username,
-        String password
-) {
-}
+        @NotBlank(message = "Username cannot be blank") String username,
+        @NotBlank(message = "Password cannot be blank") String password
+) {}

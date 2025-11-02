@@ -1,46 +1,57 @@
 package com.example.bankcards.entity.enums.converter;
 
-import com.example.bankcards.util.AesGcmEncryptor;
-import com.example.bankcards.util.KeyStoreManager;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
-@Converter
+@Component
+@Converter(autoApply = true)
 public class CardEncryptorConverter implements AttributeConverter<String, String> {
-    private static final AesGcmEncryptor encryptor;
 
-    static {
-        SecretKey key = KeyStoreManager.loadOrCreateKey();
-        encryptor = new AesGcmEncryptor(key);
+    private final SecretKey secretKey;
+    private final IvParameterSpec iv;
+
+    public CardEncryptorConverter(@Value("${card.encryption.key}") String secretKeyValue,
+                                  @Value("${card.encryption.vector}") String initVector) {
+        byte[] keyBytes = Base64.getDecoder().decode(secretKeyValue);
+        this.secretKey = new SecretKeySpec(keyBytes, "AES");
+        this.iv = new IvParameterSpec(initVector.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
-    public String convertToDatabaseColumn(String attribute) {
-        if (attribute == null) return null;
-
-        String normalized = attribute.replaceAll("\\s+", "");
-        if (!normalized.matches("\\d{16}")) {
-            throw new IllegalArgumentException("Card number must be 16 digits");
+    public String convertToDatabaseColumn(String number) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
+            byte[] encryptedBytes = cipher.doFinal(number.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(encryptedBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Encryption error", e);
         }
-
-        return encryptor.encrypt(normalized);
     }
 
     @Override
-    public String convertToEntityAttribute(String dbData) {
-        if (dbData == null) return null;
-
-        String decrypted = encryptor.decrypt(dbData);
-        return formatWithSpaces(decrypted);
-    }
-
-    private String formatWithSpaces(String digits) {
-        return String.format("%s %s %s %s",
-                digits.substring(0, 4),
-                digits.substring(4, 8),
-                digits.substring(8, 12),
-                digits.substring(12, 16));
+    public String convertToEntityAttribute(String number) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
+            byte[] decodedBytes = Base64.getDecoder().decode(number);
+            byte[] decryptedBytes = cipher.doFinal(decodedBytes);
+            return new String(decryptedBytes, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Decryption error", e);
+        }
     }
 }
+
+
 

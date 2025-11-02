@@ -1,9 +1,6 @@
 package com.example.bankcards.controller;
 
-import com.example.bankcards.entity.dto.CardDto;
-import com.example.bankcards.entity.dto.CardStatusResponse;
-import com.example.bankcards.entity.dto.TransferInfoDto;
-import com.example.bankcards.entity.dto.TransferRequestDto;
+import com.example.bankcards.entity.dto.*;
 import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +32,11 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllUserCards(page, size, userID, status, expirationDate));
     }
 
+    @GetMapping(path = "/{userID}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<UserDto> getUserByID(@PathVariable Long userID) {
+        return ResponseEntity.ok(userService.findUserByID(userID));
+    }
 
     @PostMapping(path = "/{userID}/{cardID}/block", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('USER')")

@@ -6,9 +6,9 @@ spring:
     import: optional:file:.env[.properties]
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/dev_card_db
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -24,8 +24,8 @@ spring:
     change-log: classpath:db/migration/db.changelog-master.yaml
 
 security:
-  secret:  b5f59337a612a2a7dc07328f3e7d1a04722967c7f06df20a499a7d3f91ff2a7e
-  expiration: 36000
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
 
 logging:
   level:
@@ -37,4 +37,11 @@ swagger:
 card:
   encryption:
     key: ${KEY}
-    iv: ${IV}
+    vector: ${VECTOR}
+
+preload:
+  admin: true
+
+data:
+  admin:
+    password: ${ADMIN_PASSWORD}

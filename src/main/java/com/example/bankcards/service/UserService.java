@@ -3,14 +3,13 @@ package com.example.bankcards.service;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.CardStatusRequestEntity;
 import com.example.bankcards.entity.UserEntity;
-import com.example.bankcards.entity.dto.TransferInfoDto;
-import com.example.bankcards.entity.dto.TransferRequestDto;
+import com.example.bankcards.entity.dto.*;
+import com.example.bankcards.mapper.UserMapper;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.CardStatusRequestRepository;
-import com.example.bankcards.entity.dto.CardDto;
-import com.example.bankcards.entity.dto.CardStatusResponse;
 import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.mapper.CardMapper;
+import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.util.RepositoryHelper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +46,8 @@ public class UserService {
     private final RepositoryHelper repositoryHelper;
     private final CardStatusRequestRepository cardStatusRequestRepository;
     private final CardMapper cardMapper;
+    private final UserMapper userMapper;
+    private final UserRepository userRepository;
 
     /**
      * Возвращает список всех карт пользователя с возможностью фильтрации по статусу и дате истечения.
@@ -75,6 +76,26 @@ public class UserService {
         );
 
         return getCardDtos(pageable, spec, repositoryHelper, cardMapper);
+    }
+
+    /**
+     * Находит пользователя по его уникальному идентификатору и преобразует его в {@link UserDto}.
+     * <p>
+     * Метод выполняется в режиме только для чтения.
+     * Если пользователь с указанным ID не найден, будет выброшено исключение {@link EntityNotFoundException}.
+     *
+     * @param userID уникальный идентификатор пользователя
+     * @return {@link UserDto}, представляющий пользователя с указанным ID
+     * @throws EntityNotFoundException если пользователь с указанным ID не найден
+     */
+    @Transactional(readOnly = true)
+    public UserDto findUserByID(Long userID) throws EntityNotFoundException {
+        return userMapper.toUserDto(
+                userRepository.findById(userID).orElseThrow(
+                        () -> new EntityNotFoundException("User with id: %s not found!"
+                                .formatted(userID))
+                )
+        );
     }
 
     /**

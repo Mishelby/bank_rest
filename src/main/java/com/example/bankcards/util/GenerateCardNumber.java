@@ -1,43 +1,59 @@
 package com.example.bankcards.util;
 
 import lombok.experimental.UtilityClass;
-
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
 
 @UtilityClass
 public class GenerateCardNumber {
-    private static final int CARD_LENGTH = 16;
+
+    private static final Set<String> generatedCards = new HashSet<>();
+    private static final Random random = new Random();
 
     public static String generateCardNumber() {
-        var digits = new int[CARD_LENGTH];
+        String cardNumber;
 
-        for (int i = 0; i < CARD_LENGTH - 1; i++) {
-            digits[i] = ThreadLocalRandom.current().nextInt(10);
-        }
-
-        digits[CARD_LENGTH - 1] = calculateCheckDigit(digits);
-
-        StringBuilder cardNumber = new StringBuilder();
-        for (var i = 0; i < CARD_LENGTH; i++) {
-            cardNumber.append(digits[i]);
-            if (i < CARD_LENGTH - 1 && (i + 1) % 4 == 0) {
-                cardNumber.append(" ");
+        do {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < 15; i++) {
+                builder.append(random.nextInt(10));
             }
-        }
 
-        return cardNumber.toString();
+            int checkDigit = getLuhnCheckDigit(builder.toString());
+            builder.append(checkDigit);
+
+            cardNumber = builder.toString();
+        } while (generatedCards.contains(cardNumber));
+
+        generatedCards.add(cardNumber);
+
+        return formatCardNumber(cardNumber);
     }
 
-    private static int calculateCheckDigit(int[] digits) {
-        var sum = 0;
-        for (var i = 0; i < digits.length - 1; i++) {
-            int digit = digits[digits.length - 2 - i];
-            if (i % 2 == 0) {
-                digit *= 2;
-                if (digit > 9) digit -= 9;
+    private static int getLuhnCheckDigit(String numberWithoutCheckDigit) {
+        int sum = 0;
+        boolean alternate = true;
+        for (int i = numberWithoutCheckDigit.length() - 1; i >= 0; i--) {
+            int n = Integer.parseInt(numberWithoutCheckDigit.substring(i, i + 1));
+            if (alternate) {
+                n *= 2;
+                if (n > 9) n -= 9;
             }
-            sum += digit;
+            sum += n;
+            alternate = !alternate;
         }
         return (10 - (sum % 10)) % 10;
+    }
+
+    private static String formatCardNumber(String rawNumber) {
+        StringBuilder formatted = new StringBuilder();
+        for (int i = 0; i < rawNumber.length(); i++) {
+            if (i > 0 && i % 4 == 0) {
+                formatted.append(" ");
+            }
+            formatted.append(rawNumber.charAt(i));
+        }
+        return formatted.toString();
     }
 }
