@@ -1,11 +1,13 @@
 package com.example.bankcards.service;
 
 import com.example.bankcards.entity.CardEntity;
+import com.example.bankcards.entity.CardStatusRequestEntity;
 import com.example.bankcards.entity.dto.CardDto;
 import com.example.bankcards.entity.enums.CardOperation;
 import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.mapper.CardMapper;
 import com.example.bankcards.repository.CardRepository;
+import com.example.bankcards.repository.CardStatusRequestRepository;
 import com.example.bankcards.util.GenerateCardNumber;
 import com.example.bankcards.util.RepositoryHelper;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static com.example.bankcards.entity.enums.CardStatus.*;
 import static com.example.bankcards.util.RepositoryHelper.getCardDtos;
@@ -32,6 +35,7 @@ import static com.example.bankcards.util.RepositoryHelper.getPageableSortingByAs
 @RequiredArgsConstructor
 public class AdminCardService {
     private final CardRepository cardRepository;
+    private final CardStatusRequestRepository statusRequestRepository;
     private final RepositoryHelper repositoryHelper;
     private final CardMapper cardMapper;
 
@@ -117,8 +121,15 @@ public class AdminCardService {
      * @throws EntityNotFoundException  если карта с указанным ID не найдена
      * @throws IllegalArgumentException если операция некорректна или недопустима
      */
+    //TODO переделать
     @Transactional
-    public void performOperation(Long cardID, CardOperation operation) throws EntityNotFoundException {
+    public CardDto performOperation(Long cardID, CardOperation operation) throws EntityNotFoundException {
+        Optional<CardStatusRequestEntity> statusRequest = statusRequestRepository.findByCardID(cardID);
+
+        if(statusRequest.isEmpty()) {
+            throw new IllegalArgumentException("Нет текущих запросов для данной карты");
+        }
+
         var cardEntity = repositoryHelper.findCardEntityByID(cardID);
 
         switch (operation) {
@@ -128,6 +139,8 @@ public class AdminCardService {
             case DEEP_DELETE -> deepDeleteCard(cardEntity);
             default -> throw new IllegalArgumentException("Incorrect operation! " + operation);
         }
+
+        return cardMapper.toDto(cardEntity);
     }
 
     /**
