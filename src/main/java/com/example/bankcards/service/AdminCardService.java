@@ -117,27 +117,27 @@ public class AdminCardService {
      * Выполняет указанную операцию над картой в зависимости от типа {@link CardOperation}.
      *
      * @param cardID    идентификатор карты
-     * @param operation операция, которую необходимо выполнить
      * @throws EntityNotFoundException  если карта с указанным ID не найдена
      * @throws IllegalArgumentException если операция некорректна или недопустима
      */
     //TODO переделать
     @Transactional
-    public CardDto performOperation(Long cardID, CardOperation operation) throws EntityNotFoundException {
+    public CardDto performOperation(Long cardID) throws EntityNotFoundException {
         Optional<CardStatusRequestEntity> statusRequest = statusRequestRepository.findByCardID(cardID);
 
         if(statusRequest.isEmpty()) {
             throw new IllegalArgumentException("Нет текущих запросов для данной карты");
         }
 
+        CardStatusRequestEntity request = statusRequest.get();
         var cardEntity = repositoryHelper.findCardEntityByID(cardID);
 
-        switch (operation) {
+        switch (request.getStatus()) {
             case ACTIVATE -> active(cardEntity);
             case BLOCK -> blockCard(cardEntity);
             case DELETE -> deleteCard(cardEntity);
             case DEEP_DELETE -> deepDeleteCard(cardEntity);
-            default -> throw new IllegalArgumentException("Incorrect operation! " + operation);
+            default -> throw new IllegalArgumentException("Incorrect operation! " + request.getStatus());
         }
 
         return cardMapper.toDto(cardEntity);

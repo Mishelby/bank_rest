@@ -7,7 +7,7 @@ public enum CardOperation {
     ACTIVATE,
     BLOCK,
     DELETE,
-    DEEP_DELETE ;
+    DEEP_DELETE;
 
     public static CardOperation fromString(String value) {
         for (CardOperation cardOperation : CardOperation.values()) {

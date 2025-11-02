@@ -22,11 +22,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static com.example.bankcards.entity.enums.CardOperation.BLOCK;
-import static com.example.bankcards.entity.enums.CardStatus.ACTIVE;
-import static com.example.bankcards.entity.enums.CardStatus.BLOCKED;
+import static com.example.bankcards.entity.enums.CardStatus.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
@@ -117,22 +115,82 @@ class AdminCardsControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("PATCH /api/v1/admin/cards/{cardID}/block — должен вернуть статус 204 noContent")
+    @DisplayName("PATCH /api/v1/admin/cards/{cardID}/operation — должен вернуть статус 200 OK")
     void blockCardByCardID_shouldReturnNoContent() throws Exception {
         CardDto dto = new CardDto();
         dto.setCardID(1L);
         dto.setNumber("**** **** **** 1234");
         dto.setCardStatus(BLOCKED);
 
-        Mockito.when(adminCardService.performOperation(1L, BLOCK)).thenReturn(dto);
+        Mockito.when(adminCardService.performOperation(1L)).thenReturn(dto);
 
-        mockMvc.perform(post("/api/v1/admin/cards/1/block"))
-                .andExpect(status().isNoContent())
+        mockMvc.perform(patch("/api/v1/admin/cards/1/operation"))
+                .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.cardID").value(1L))
                 .andExpect(jsonPath("$.cardStatus").value("BLOCKED"));
 
-        Mockito.verify(adminCardService).performOperation(eq(1L), any());
+        Mockito.verify(adminCardService).performOperation(eq(1L));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("PATCH /api/v1/admin/cards/{cardID}/operation — должен вернуть статус 200 OK")
+    void activateCardByCardID_shouldReturnOk() throws Exception {
+        CardDto dto = new CardDto();
+        dto.setCardID(2L);
+        dto.setNumber("**** **** **** 5678");
+        dto.setCardStatus(ACTIVE);
+
+        Mockito.when(adminCardService.performOperation(2L)).thenReturn(dto);
+
+        mockMvc.perform(patch("/api/v1/admin/cards/2/operation"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.cardID").value(2L))
+                .andExpect(jsonPath("$.cardStatus").value("ACTIVE"));
+
+        Mockito.verify(adminCardService).performOperation(eq(2L));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("PATCH /api/v1/admin/cards/{cardID}/operation — должен вернуть статус 200 OK")
+    void deleteCardByCardID_shouldReturnOk() throws Exception {
+        CardDto dto = new CardDto();
+        dto.setCardID(3L);
+        dto.setNumber("**** **** **** 9876");
+        dto.setCardStatus(DELETED);
+
+        Mockito.when(adminCardService.performOperation(3L)).thenReturn(dto);
+
+        mockMvc.perform(patch("/api/v1/admin/cards/3/operation"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.cardID").value(3L))
+                .andExpect(jsonPath("$.cardStatus").value("DELETED"));
+
+        Mockito.verify(adminCardService).performOperation(eq(3L));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("PATCH /api/v1/admin/cards/{cardID}/operation — должен вернуть статус 200 OK")
+    void deepDeleteCardByCardID_shouldReturnOk() throws Exception {
+        CardDto dto = new CardDto();
+        dto.setCardID(4L);
+        dto.setNumber("**** **** **** 0000");
+        dto.setCardStatus(DELETED);
+
+        Mockito.when(adminCardService.performOperation(4L)).thenReturn(dto);
+
+        mockMvc.perform(patch("/api/v1/admin/cards/4/operation"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.cardID").value(4L))
+                .andExpect(jsonPath("$.cardStatus").value("DELETED"));
+
+        Mockito.verify(adminCardService).performOperation(eq(4L));
     }
 
 }

@@ -51,31 +51,10 @@ public class AdminCardsController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PatchMapping("/{cardID}/block")
+    @PatchMapping("/{cardID}/operation")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> cardOperation(@PathVariable("cardID") Long cardID) {
-        adminCardService.performOperation(cardID, BLOCK);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CardDto> cardOperation(@PathVariable("cardID") Long cardID) {
+        return ResponseEntity.ok(adminCardService.performOperation(cardID));
     }
 
-    @PatchMapping("/{cardID}/activate")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> activateCard(@PathVariable("cardID") Long cardID) {
-        adminCardService.performOperation(cardID, ACTIVATE);
-        return ResponseEntity.ok().build();
-    }
-
-    @DeleteMapping("/{cardID}/delete")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteCard(@PathVariable("cardID") Long cardID) {
-        adminCardService.performOperation(cardID, DELETE);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{cardID}/deep-delete")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deepDeleteCard(@PathVariable("cardID") Long cardID) {
-        adminCardService.performOperation(cardID, DEEP_DELETE);
-        return ResponseEntity.noContent().build();
-    }
 }
