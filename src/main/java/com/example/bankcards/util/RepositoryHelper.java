@@ -1,5 +1,6 @@
 package com.example.bankcards.util;
 
+import com.example.bankcards.dto.SpecificationData;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.UserEntity;
 import com.example.bankcards.dto.CardDto;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -87,25 +89,45 @@ public class RepositoryHelper {
         return PageRequest.of(page, size, Sort.by("id").ascending());
     }
 
-    public Specification<CardEntity> getSpecificationWithParams(
-            CardStatus status,
-            Long ownerID,
-            LocalDate expirationDate) {
+    /**
+     * Формирует {@link Specification} для {@link CardEntity} на основе переданных параметров фильтрации.
+     * <p>
+     * Если какое-то из значений в {@link SpecificationData} равно {@code null}, оно просто пропускается.
+     *
+     * @param data параметры фильтрации (статус карты, владелец, дата истечения и т.д.)
+     * @return объект {@link Specification}, который можно передать в {@link JpaSpecificationExecutor}
+     */
+    public <T> Specification<T> getSpecificationWithParams(SpecificationData data) {
+        Specification<T> spec = Specification.unrestricted();
 
-        Specification<CardEntity> spec = Specification.unrestricted();
-        if (nonNull(status)) {
+        if (nonNull(data.status())) {
             spec = spec.and((root, query, builder) ->
-                    builder.and(builder.equal(root.get("cardStatus"), status)));
+                    builder.equal(root.get("cardStatus"), data.status()));
         }
 
-        if (nonNull(ownerID)) {
+        if (nonNull(data.ownerID())) {
             spec = spec.and((root, query, builder) ->
-                    builder.equal(root.get("owner").get("id"), ownerID));
+                    builder.equal(root.get("owner").get("id"), data.ownerID()));
         }
 
-        if (nonNull(expirationDate)) {
+        if (nonNull(data.expirationDate())) {
             spec = spec.and((root, query, builder) ->
-                    builder.equal(root.get("expirationDate"), expirationDate));
+                    builder.equal(root.get("expirationDate"), data.expirationDate()));
+        }
+
+        if (nonNull(data.cardID())) {
+            spec = spec.and((root, query, builder) ->
+                    builder.equal(root.get("id"), data.cardID()));
+        }
+
+        if (nonNull(data.statusRequest())) {
+            spec = spec.and((root, query, builder) ->
+                    builder.equal(root.get("statusRequest"), data.statusRequest()));
+        }
+
+        if (nonNull(data.requestedAt())) {
+            spec = spec.and((root, query, builder) ->
+                    builder.equal(root.get("requestedAt"), data.requestedAt()));
         }
 
         return spec;

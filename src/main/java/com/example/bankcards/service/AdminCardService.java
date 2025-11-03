@@ -1,5 +1,7 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.dto.CardStatusRequestDto;
+import com.example.bankcards.dto.SpecificationData;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.CardStatusRequestEntity;
 import com.example.bankcards.dto.CardDto;
@@ -13,12 +15,14 @@ import com.example.bankcards.util.RepositoryHelper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,13 +65,35 @@ public class AdminCardService {
                                      Long ownerID,
                                      LocalDate expirationDate) {
         var pageable = getPageableSortingByAscID(page, size);
-        Specification<CardEntity> spec = repositoryHelper.getSpecificationWithParams(
-                status,
-                ownerID,
-                expirationDate
-        );
+        SpecificationData specificationData = SpecificationData.builder()
+                .status(status)
+                .ownerID(ownerID)
+                .expirationDate(expirationDate)
+                .build();
+
+        Specification<CardEntity> spec = repositoryHelper.getSpecificationWithParams(specificationData);
 
         return getCardDtos(pageable, spec, repositoryHelper, cardMapper);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CardStatusRequestDto> getAllCardsRequests(int page,
+                                                          int size,
+                                                          CardOperation statusRequest,
+                                                          Long ownerID,
+                                                          Long cardID,
+                                                          LocalDateTime requestedAt){
+        Pageable pageable = getPageableSortingByAscID(page, size);
+        SpecificationData specificationData = SpecificationData.builder()
+                .statusRequest(statusRequest)
+                .ownerID(ownerID)
+                .cardID(cardID)
+                .requestedAt(requestedAt)
+                .build();
+
+        Specification<CardStatusRequestEntity> specificationWithParams =
+                repositoryHelper.getSpecificationWithParams(specificationData);
+        statusRequestRepository.findAll(specificationWithParams, pageable);
     }
 
     /**

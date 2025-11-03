@@ -4,6 +4,10 @@ import com.example.bankcards.entity.enums.CardOperation;
 import com.example.bankcards.entity.enums.converter.CardOperationConverter;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "card_status_request")
@@ -26,4 +30,8 @@ public class CardStatusRequestEntity {
 
     @Convert(converter = CardOperationConverter.class)
     private CardOperation status;
+
+    @CreationTimestamp
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime requestedAt;
 }

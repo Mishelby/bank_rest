@@ -3,6 +3,7 @@ package com.example.bankcards.service;
 import com.example.bankcards.dto.*;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.CardStatusRequestEntity;
+import com.example.bankcards.entity.UserEntity;
 import com.example.bankcards.mapper.UserMapper;
 import com.example.bankcards.repository.CardStatusRequestRepository;
 import com.example.bankcards.entity.enums.CardStatus;
@@ -65,11 +66,11 @@ public class UserService {
         repositoryHelper.isUserExists(userID);
 
         var pageable = getPageableSortingByAscID(page, size);
-        Specification<CardEntity> spec = repositoryHelper.getSpecificationWithParams(
-                status,
-                userID,
-                expirationDate
-        );
+        var specificationData = SpecificationData.builder()
+                .status(status)
+                .expirationDate(expirationDate)
+                .ownerID(userID).build();
+        Specification<CardEntity> spec = repositoryHelper.getSpecificationWithParams(specificationData);
 
         return getCardDtos(pageable, spec, repositoryHelper, cardMapper);
     }
@@ -87,10 +88,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserDto findUserByID(Long userID) throws EntityNotFoundException {
         return userMapper.toUserDto(
-                userRepository.findById(userID).orElseThrow(
-                        () -> new EntityNotFoundException("User with id: %s not found!"
-                                .formatted(userID))
-                )
+                repositoryHelper.findUserEntityByID(userID)
         );
     }
 
@@ -106,8 +104,13 @@ public class UserService {
     public CardDto findCardByID(
             Long userID,
             Long cardID) throws EntityNotFoundException {
-        repositoryHelper.isUserExists(userID);
-        return cardMapper.toDto(repositoryHelper.findCardEntityByID(cardID));
+        var userEntityByID = repositoryHelper.findUserEntityByID(userID);
+        var cardEntityByID = repositoryHelper.findCardEntityByID(cardID);
+        if(!userEntityByID.getCards().contains(cardEntityByID)) {
+            log.warn("Карта с ID: {} не принадлежит пользователю с ID {}",  cardID, cardEntityByID);
+            throw new IllegalArgumentException("Карта не принадлежит пользователю.");
+        }
+        return cardMapper.toDto(cardEntityByID);
     }
 
     /**
