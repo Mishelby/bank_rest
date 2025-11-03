@@ -12,6 +12,8 @@ public record SpecificationData(
         CardStatus status,
         Long ownerID,
         LocalDate expirationDate,
+        Boolean enabled,
+        LocalDateTime createdDate,
         CardOperation statusRequest,
         Long cardID,
         LocalDateTime requestedAt

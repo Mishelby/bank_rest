@@ -105,6 +105,16 @@ public class RepositoryHelper {
                     builder.equal(root.get("cardStatus"), data.status()));
         }
 
+        if (nonNull(data.enabled())) {
+            spec = spec.and((root, query, builder) ->
+                    builder.equal(root.get("enabled"), data.enabled()));
+        }
+
+        if (nonNull(data.createdDate())) {
+            spec = spec.and((root, query, builder) ->
+                    builder.equal(root.get("createdDate"), data.createdDate()));
+        }
+
         if (nonNull(data.ownerID())) {
             spec = spec.and((root, query, builder) ->
                     builder.equal(root.get("owner").get("id"), data.ownerID()));
