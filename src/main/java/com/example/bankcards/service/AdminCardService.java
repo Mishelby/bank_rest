@@ -8,6 +8,7 @@ import com.example.bankcards.dto.CardDto;
 import com.example.bankcards.entity.UserEntity;
 import com.example.bankcards.entity.enums.CardOperation;
 import com.example.bankcards.entity.enums.CardStatus;
+import com.example.bankcards.handler.CardOperationHandler;
 import com.example.bankcards.mapper.CardMapper;
 import com.example.bankcards.mapper.CardStatusMapper;
 import com.example.bankcards.repository.CardRepository;
@@ -27,11 +28,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.example.bankcards.entity.enums.CardStatus.*;
 import static com.example.bankcards.util.RepositoryHelper.getCardDtos;
 import static com.example.bankcards.util.RepositoryHelper.getPageableSortingByAscID;
+import static java.util.Objects.isNull;
 
 /**
  * Сервис для управления банковскими картами администратором.
@@ -50,6 +53,8 @@ public class AdminCardService {
      * Срок действия карты по умолчанию — 10 лет.
      */
     public static final LocalDate EXPIRED_DATE = LocalDate.now().plusYears(10);
+
+    private final Map<CardOperation, CardOperationHandler> cardOperationsHandler;
     private final CardStatusMapper cardStatusMapper;
 
     /**
@@ -160,92 +165,18 @@ public class AdminCardService {
      */
     //TODO переделать
     @Transactional
-    public CardDto performOperation(Long cardID) throws EntityNotFoundException {
-        Optional<CardStatusRequestEntity> statusRequest = statusRequestRepository.findByCardID(cardID);
-
-        if (statusRequest.isEmpty()) {
-            throw new IllegalArgumentException("Нет текущих запросов для данной карты");
-        }
-
-        CardStatusRequestEntity request = statusRequest.get();
+    public CardDto performOperation(Long cardID, CardOperation cardOperation) throws EntityNotFoundException {
         var cardEntity = repositoryHelper.findCardEntityByID(cardID);
+        CardOperationHandler cardOperationHandler = cardOperationsHandler.get(cardOperation);
 
-        switch (request.getStatus()) {
-            case ACTIVATE -> active(cardEntity);
-            case BLOCK -> blockCard(cardEntity);
-            case DELETE -> deleteCard(cardEntity);
-            case DEEP_DELETE -> deepDeleteCard(cardEntity);
-            default -> throw new IllegalArgumentException("Incorrect operation! " + request.getStatus());
+        if (isNull(cardOperationHandler)) {
+            throw new IllegalArgumentException("Некорректная операция %s".formatted(cardOperation));
         }
+
+        cardOperationHandler.handle(cardEntity);
 
         return cardMapper.toDto(cardEntity);
     }
 
-    /**
-     * Активирует карту, если она не удалена и неактивна.
-     *
-     * @param cardEntity сущность карты
-     * @throws IllegalArgumentException если карта уже активна или удалена
-     */
-    public void active(CardEntity cardEntity) throws IllegalArgumentException {
-        log.info("[INFO] Запрос на активацию карты с ID: [{}]", cardEntity.getId());
 
-        if (ACTIVE == cardEntity.getCardStatus() || DELETED == cardEntity.getCardStatus()) {
-            throw new IllegalArgumentException("Нельзя активировать карту с ID %s!".formatted(cardEntity.getId()));
-        }
-
-        cardEntity.setCardStatus(CardStatus.ACTIVE);
-        log.info("[INFO] Карта с ID {} была активирована!", cardEntity.getId());
-    }
-
-    /**
-     * Блокирует активную карту.
-     *
-     * @param cardEntity сущность карты
-     * @throws IllegalArgumentException если карта не активна
-     */
-    public void blockCard(CardEntity cardEntity) throws IllegalArgumentException {
-        log.info("[INFO] Запрос на блокировку карты с ID: [{}]", cardEntity.getId());
-
-        if (CardStatus.ACTIVE != cardEntity.getCardStatus()) {
-            throw new IllegalArgumentException("Нельзя заблокировать карту с ID %s!".formatted(cardEntity.getId()));
-        }
-
-        cardEntity.setCardStatus(CardStatus.BLOCKED);
-        log.info("[INFO] Карта с ID {} была заблокирована!", cardEntity.getId());
-    }
-
-    /**
-     * Помечает карту как удалённую (меняет статус на {@link CardStatus#DELETED}).
-     *
-     * @param cardEntity сущность карты
-     * @throws IllegalArgumentException если карта уже удалена
-     */
-    public void deleteCard(CardEntity cardEntity) throws IllegalArgumentException {
-        log.info("[INFO] Запрос на удаление карты с ID: [{}]", cardEntity.getId());
-
-        if (DELETED == cardEntity.getCardStatus()) {
-            throw new IllegalArgumentException("Нельзя удалить карту с ID %s!".formatted(cardEntity.getId()));
-        }
-
-        cardEntity.setCardStatus(DELETED);
-        log.info("[INFO] Статус карты с ID {} был изменён на {}", cardEntity.getId(), DELETED);
-    }
-
-    /**
-     * Полностью удаляет карту из базы данных.
-     *
-     * @param cardEntity сущность карты
-     * @throws IllegalArgumentException если карта заблокирована
-     */
-    public void deepDeleteCard(CardEntity cardEntity) throws IllegalArgumentException {
-        log.info("[INFO] Запрос на глубокое удаление карты с ID: [{}]", cardEntity.getId());
-
-        if (BLOCKED == cardEntity.getCardStatus()) {
-            throw new IllegalArgumentException("Нельзя удалить карту с ID %s!".formatted(cardEntity.getId()));
-        }
-
-        cardRepository.deleteById(cardEntity.getId());
-        log.info("[INFO] Карта с ID [{}] была удалена полностью!", cardEntity.getId());
-    }
 }

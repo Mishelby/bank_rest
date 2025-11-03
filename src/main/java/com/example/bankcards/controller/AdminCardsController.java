@@ -29,7 +29,7 @@ public class AdminCardsController {
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<CardDto>> getAllAdminCards(
+    public ResponseEntity<List<CardDto>> getAllCardsByAdmin(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) CardStatus status,
@@ -60,6 +60,16 @@ public class AdminCardsController {
     }
 
     /**
+     * Выполнить операцию с картой (например, блокировка/активация).
+     */
+    @PatchMapping("/{cardID}/{operation}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CardDto> cardOperation(@PathVariable("cardID") Long cardID,
+                                                 @PathVariable("operation") CardOperation cardOperation) {
+        return ResponseEntity.ok(adminCardService.performOperation(cardID, cardOperation));
+    }
+
+    /**
      * Получить карту по её ID.
      */
     @GetMapping(path = "/{cardID}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -78,15 +88,6 @@ public class AdminCardsController {
 
         var location = URI.create(String.format("/api/v1/admin/cards/%d", created.getCardID()));
         return ResponseEntity.created(location).body(created);
-    }
-
-    /**
-     * Выполнить операцию с картой (например, блокировка/активация).
-     */
-    @PatchMapping("/{cardID}/operation")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CardDto> cardOperation(@PathVariable("cardID") Long cardID) {
-        return ResponseEntity.ok(adminCardService.performOperation(cardID));
     }
 
 }
