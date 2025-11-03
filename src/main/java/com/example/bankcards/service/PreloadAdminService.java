@@ -13,6 +13,31 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+/**
+ * Сервис для предварительной загрузки (инициализации) учетной записи администратора в систему.
+ * <p>
+ * Активируется только при установленном свойстве {@code preload.admin=true}.
+ * Реализует интерфейс {@link CommandLineRunner}, поэтому выполняется автоматически
+ * при запуске Spring Boot приложения.
+ *
+ * <p>Основные задачи:
+ * <ul>
+ *   <li>Проверить наличие пользователя с именем {@code admin} в базе данных.</li>
+ *   <li>Если такого пользователя нет — создать его с ролью {@link Role#ADMIN} и паролем
+ *       из параметра {@code data.admin.password}.</li>
+ * </ul>
+ *
+ * Пример настройки в application.yml:
+ * <pre>
+ * preload:
+ *   admin: true
+ *
+ * data:
+ *   admin:
+ *     password: admin123
+ * </pre>
+ *
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,11 +49,20 @@ public class PreloadAdminService implements CommandLineRunner {
     @Value("${data.admin.password}")
     private String adminPassword;
 
+    /**
+     * Точка входа при запуске приложения. Запускает процесс инициализации администратора.
+     *
+     * @param args аргументы командной строки (не используются)
+     */
     @Override
     public void run(String... args) throws Exception {
         initializeAdmin();
     }
 
+    /**
+     * Проверяет, существует ли учетная запись администратора.
+     * Если нет — создает новую запись с зашифрованным паролем.
+     */
     private void initializeAdmin() {
         Optional<UserEntity> admin = userRepository.findByUsername("admin");
 

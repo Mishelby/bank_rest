@@ -8,7 +8,6 @@ import com.example.bankcards.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +18,22 @@ import static com.example.bankcards.entity.enums.CardOperation.ACTIVATE;
 import static com.example.bankcards.entity.enums.CardOperation.BLOCK;
 import static com.example.bankcards.entity.enums.Role.USER;
 
+/**
+ * Сервис для автоматической предзагрузки тестовых данных в базу при старте приложения.
+ * <p>
+ * Реализует интерфейс {@link CommandLineRunner}, что позволяет выполнять
+ * инициализацию данных сразу после поднятия контекста Spring Boot.
+ *
+ * <p>Выполняет три основных действия:
+ * <ul>
+ *   <li>Создает тестовых пользователей с ролью {@link Role#USER}, если они отсутствуют.</li>
+ *   <li>Создает банковские карты для пользователей без карт.</li>
+ *   <li>Создает тестовые заявки на изменение статуса карт (блокировка/активация).</li>
+ * </ul>
+ *
+ * <p>Используется только в dev/stage окружениях для генерации демонстрационных данных.
+ *
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,6 +43,12 @@ public class PreloadDataService implements CommandLineRunner {
     private final PasswordEncoder encoder;
     private final CardStatusRequestRepository cardStatusRequestRepository;
 
+    /**
+     * Выполняется при старте приложения. Последовательно вызывает
+     * методы предзагрузки пользователей, карт и заявок.
+     *
+     * @param args аргументы командной строки (не используются)
+     */
     @Override
     public void run(String... args) throws Exception {
         preloadUserList();
@@ -35,7 +56,9 @@ public class PreloadDataService implements CommandLineRunner {
         preloadCardStatusRequestList();
     }
 
-
+    /**
+     * Создает набор тестовых пользователей, если в базе отсутствуют пользователи с ролью {@link Role#USER}.
+     */
     private void preloadUserList() {
         List<UserEntity> allUsers = userRepository.findAll();
         long countOfUsers = allUsers.stream().filter(u -> USER == u.getRole()).count();
@@ -52,19 +75,9 @@ public class PreloadDataService implements CommandLineRunner {
         }
     }
 
-    private static UserEntity createTestUser(String username,
-                                             String password,
-                                             Role role,
-                                             boolean enabled,
-                                             PasswordEncoder encoder) {
-        return UserEntity.builder()
-                .username(username)
-                .password(encoder.encode(password))
-                .role(role)
-                .enabled(enabled)
-                .build();
-    }
-
+    /**
+     * Для каждого пользователя без карт создает по три тестовые карты.
+     */
     private void preloadCardForUserList() {
         List<UserEntity> allUsers = userRepository.findAllWithCards();
 
@@ -78,6 +91,9 @@ public class PreloadDataService implements CommandLineRunner {
                 });
     }
 
+    /**
+     * Создает тестовые заявки на изменение статуса карт (через одну — блокировка/активация).
+     */
     private void preloadCardStatusRequestList() {
         var counter = new AtomicInteger();
         userRepository.findAllWithCards().forEach(user -> {
@@ -99,5 +115,28 @@ public class PreloadDataService implements CommandLineRunner {
                 cardStatusRequestRepository.save(statusRequest);
             }
         });
+    }
+
+    /**
+     * Создает сущность пользователя с указанными параметрами.
+     *
+     * @param username имя пользователя
+     * @param password пароль (будет закодирован)
+     * @param role     роль пользователя
+     * @param enabled  статус активности
+     * @param encoder  {@link PasswordEncoder} для шифрования пароля
+     * @return новый объект {@link UserEntity}
+     */
+    private static UserEntity createTestUser(String username,
+                                             String password,
+                                             Role role,
+                                             boolean enabled,
+                                             PasswordEncoder encoder) {
+        return UserEntity.builder()
+                .username(username)
+                .password(encoder.encode(password))
+                .role(role)
+                .enabled(enabled)
+                .build();
     }
 }
