@@ -5,9 +5,11 @@ import com.example.bankcards.dto.SpecificationData;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.CardStatusRequestEntity;
 import com.example.bankcards.dto.CardDto;
+import com.example.bankcards.entity.UserEntity;
 import com.example.bankcards.entity.enums.CardOperation;
 import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.mapper.CardMapper;
+import com.example.bankcards.mapper.CardStatusMapper;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.CardStatusRequestRepository;
 import com.example.bankcards.util.GenerateCardNumber;
@@ -15,6 +17,7 @@ import com.example.bankcards.util.RepositoryHelper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -47,6 +50,7 @@ public class AdminCardService {
      * Срок действия карты по умолчанию — 10 лет.
      */
     public static final LocalDate EXPIRED_DATE = LocalDate.now().plusYears(10);
+    private final CardStatusMapper cardStatusMapper;
 
     /**
      * Возвращает список всех карт с возможностью фильтрации по статусу, владельцу и дате истечения срока действия.
@@ -65,7 +69,7 @@ public class AdminCardService {
                                      Long ownerID,
                                      LocalDate expirationDate) {
         var pageable = getPageableSortingByAscID(page, size);
-        SpecificationData specificationData = SpecificationData.builder()
+        var specificationData = SpecificationData.builder()
                 .status(status)
                 .ownerID(ownerID)
                 .expirationDate(expirationDate)
@@ -82,9 +86,9 @@ public class AdminCardService {
                                                           CardOperation statusRequest,
                                                           Long ownerID,
                                                           Long cardID,
-                                                          LocalDateTime requestedAt){
-        Pageable pageable = getPageableSortingByAscID(page, size);
-        SpecificationData specificationData = SpecificationData.builder()
+                                                          LocalDateTime requestedAt) {
+        var pageable = getPageableSortingByAscID(page, size);
+        var specificationData = SpecificationData.builder()
                 .statusRequest(statusRequest)
                 .ownerID(ownerID)
                 .cardID(cardID)
@@ -93,7 +97,15 @@ public class AdminCardService {
 
         Specification<CardStatusRequestEntity> specificationWithParams =
                 repositoryHelper.getSpecificationWithParams(specificationData);
-        statusRequestRepository.findAll(specificationWithParams, pageable);
+
+        Page<CardStatusRequestEntity> pageStatus = statusRequestRepository.findAll(specificationWithParams, pageable);
+
+        return pageStatus.stream().map(entity -> {
+            var userEntityByID = repositoryHelper.findUserEntityByID(entity.getOwnerID());
+            var cardEntityByID = repositoryHelper.findCardEntityByID(entity.getCardID());
+
+            return cardStatusMapper.toDto(entity, cardEntityByID, userEntityByID);
+        }).toList();
     }
 
     /**
@@ -142,7 +154,7 @@ public class AdminCardService {
     /**
      * Выполняет указанную операцию над картой в зависимости от типа {@link CardOperation}.
      *
-     * @param cardID    идентификатор карты
+     * @param cardID идентификатор карты
      * @throws EntityNotFoundException  если карта с указанным ID не найдена
      * @throws IllegalArgumentException если операция некорректна или недопустима
      */
@@ -151,7 +163,7 @@ public class AdminCardService {
     public CardDto performOperation(Long cardID) throws EntityNotFoundException {
         Optional<CardStatusRequestEntity> statusRequest = statusRequestRepository.findByCardID(cardID);
 
-        if(statusRequest.isEmpty()) {
+        if (statusRequest.isEmpty()) {
             throw new IllegalArgumentException("Нет текущих запросов для данной карты");
         }
 

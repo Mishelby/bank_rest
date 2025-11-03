@@ -32,6 +32,10 @@ databaseChangeLog:
                   constraints:
                     nullable: true
 
+              - column:
+                  name: requested_at
+                  type: timestamp
+
 
         - addForeignKeyConstraint:
             baseTableName: card_status_request

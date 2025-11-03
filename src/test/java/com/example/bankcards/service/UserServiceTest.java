@@ -82,14 +82,13 @@ class UserServiceTest {
         CardDto expectedDto = new CardDto();
         expectedDto.setCardID(CARD_ID);
 
-        Mockito.doNothing().when(repositoryHelper).isUserExists(USER_ID);
+        Mockito.when(repositoryHelper.findUserEntityByID(USER_ID)).thenReturn(user);
         Mockito.when(repositoryHelper.findCardEntityByID(CARD_ID)).thenReturn(activeCard);
         Mockito.when(cardMapper.toDto(activeCard)).thenReturn(expectedDto);
 
         CardDto actual = userService.findCardByID(USER_ID, CARD_ID);
 
         assertEquals(expectedDto, actual, "CardDto должны соответствовать друг другу!");
-        Mockito.verify(repositoryHelper).isUserExists(USER_ID);
         Mockito.verify(cardMapper).toDto(activeCard);
     }
 

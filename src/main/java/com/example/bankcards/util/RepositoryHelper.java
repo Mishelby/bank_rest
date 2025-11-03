@@ -117,12 +117,12 @@ public class RepositoryHelper {
 
         if (nonNull(data.cardID())) {
             spec = spec.and((root, query, builder) ->
-                    builder.equal(root.get("id"), data.cardID()));
+                    builder.equal(root.get("cardID"), data.cardID()));
         }
 
         if (nonNull(data.statusRequest())) {
             spec = spec.and((root, query, builder) ->
-                    builder.equal(root.get("statusRequest"), data.statusRequest()));
+                    builder.equal(root.get("status"), data.statusRequest()));
         }
 
         if (nonNull(data.requestedAt())) {

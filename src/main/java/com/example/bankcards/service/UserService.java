@@ -64,8 +64,8 @@ public class UserService {
                                           CardStatus status,
                                           LocalDate expirationDate) throws EntityNotFoundException {
         repositoryHelper.isUserExists(userID);
-
         var pageable = getPageableSortingByAscID(page, size);
+
         var specificationData = SpecificationData.builder()
                 .status(status)
                 .expirationDate(expirationDate)
@@ -106,10 +106,12 @@ public class UserService {
             Long cardID) throws EntityNotFoundException {
         var userEntityByID = repositoryHelper.findUserEntityByID(userID);
         var cardEntityByID = repositoryHelper.findCardEntityByID(cardID);
+
         if(!userEntityByID.getCards().contains(cardEntityByID)) {
             log.warn("Карта с ID: {} не принадлежит пользователю с ID {}",  cardID, cardEntityByID);
             throw new IllegalArgumentException("Карта не принадлежит пользователю.");
         }
+
         return cardMapper.toDto(cardEntityByID);
     }
 

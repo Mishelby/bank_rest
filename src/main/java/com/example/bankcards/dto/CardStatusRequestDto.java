@@ -10,7 +10,7 @@ public record CardStatusRequestDto(
         Long userID,
         String username,
         String cardNumber,
-        CardOperation cardOperation,
+        CardOperation status,
         LocalDateTime requestedAt
 ) {
 }
