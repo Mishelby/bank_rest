@@ -1,8 +1,8 @@
 package com.example.bankcards.controller;
 
 import com.example.bankcards.dto.SignupResponseDto;
-import com.example.bankcards.entity.dto.LoginRequestDto;
-import com.example.bankcards.entity.dto.LoginResponseDto;
+import com.example.bankcards.dto.LoginRequestDto;
+import com.example.bankcards.dto.LoginResponseDto;
 import com.example.bankcards.security.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

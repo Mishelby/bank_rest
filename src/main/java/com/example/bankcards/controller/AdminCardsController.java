@@ -1,6 +1,6 @@
 package com.example.bankcards.controller;
 
-import com.example.bankcards.entity.dto.CardDto;
+import com.example.bankcards.dto.CardDto;
 import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.service.AdminCardService;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +14,6 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.example.bankcards.entity.enums.CardOperation.*;
-
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/cards")
@@ -23,7 +21,7 @@ import static com.example.bankcards.entity.enums.CardOperation.*;
 public class AdminCardsController {
     private final AdminCardService adminCardService;
 
-    @GetMapping
+    @GetMapping(produces =  MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<CardDto>> getAllAdminCards(
             @RequestParam(defaultValue = "0") int page,

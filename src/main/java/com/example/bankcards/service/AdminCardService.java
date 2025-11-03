@@ -2,7 +2,7 @@ package com.example.bankcards.service;
 
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.CardStatusRequestEntity;
-import com.example.bankcards.entity.dto.CardDto;
+import com.example.bankcards.dto.CardDto;
 import com.example.bankcards.entity.enums.CardOperation;
 import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.mapper.CardMapper;

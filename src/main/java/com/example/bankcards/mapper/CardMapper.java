@@ -1,14 +1,12 @@
 package com.example.bankcards.mapper;
 
 import com.example.bankcards.entity.CardEntity;
-import com.example.bankcards.entity.dto.CardDto;
-import com.example.bankcards.entity.dto.TransferInfoDto;
-import com.example.bankcards.entity.dto.TransferRequestDto;
+import com.example.bankcards.dto.CardDto;
+import com.example.bankcards.dto.TransferInfoDto;
 import com.example.bankcards.util.MaskCardNumber;
 import org.mapstruct.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Mapper(componentModel = "spring", builder = @Builder(disableBuilder = false))
 public interface CardMapper {

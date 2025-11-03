@@ -1,54 +1,88 @@
 package com.example.bankcards.controller;
 
+import com.example.bankcards.dto.LoginRequestDto;
+import com.example.bankcards.dto.LoginResponseDto;
 import com.example.bankcards.dto.SignupResponseDto;
-import com.example.bankcards.entity.dto.LoginRequestDto;
-import com.example.bankcards.entity.dto.LoginResponseDto;
+import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.security.AuthService;
-import org.junit.jupiter.api.BeforeEach;
+import com.example.bankcards.security.AuthUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(controllers = AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
     private AuthService authService;
 
-    @InjectMocks
-    private AuthController authController;
+    @MockitoBean
+    private AuthUtil authUtil;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @Test
+    @DisplayName("POST /api/v1/auth/login — должен вернуть статус 200, ID и JWT токен")
+    void login_ReturnsLoginResponse() throws Exception {
+        LoginRequestDto loginRequest = LoginRequestDto.builder()
+                .username("username")
+                .password("password")
+                .build();
+
+        LoginResponseDto responseDto = LoginResponseDto.builder()
+                .userId(1L)
+                .jwt("jwtToken")
+                .build();
+
+        Mockito.when(authService.login(loginRequest)).thenReturn(responseDto);
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1L))
+                .andExpect(jsonPath("$.jwt").value("jwtToken"));
     }
 
     @Test
-    void login_ReturnsLoginResponse() {
-        LoginRequestDto request = new LoginRequestDto("user", "pass");
-        LoginResponseDto responseDto = new LoginResponseDto("jwt-token", 1L);
-        when(authService.login(request)).thenReturn(responseDto);
+    @DisplayName("POST /api/v1/auth/signup — должен вернуть статус 200, ID и username")
+    void signun_ReturnsSignupResponseDto() throws Exception {
+        LoginRequestDto loginRequest = LoginRequestDto.builder()
+                .username("username")
+                .password("password")
+                .build();
 
-        ResponseEntity<LoginResponseDto> response = authController.login(request);
+        SignupResponseDto responseDto = SignupResponseDto.builder()
+                .userId(1L)
+                .username("username")
+                .build();
 
-        assertEquals(200, response.getStatusCode().value(), "Код ответа должен быть 200");
-        assertEquals(responseDto, response.getBody(), "Тело ответа должно совпадать");
+        Mockito.when(authService.signup(loginRequest)).thenReturn(responseDto);
+
+        mockMvc.perform(post("/api/v1/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1L))
+                .andExpect(jsonPath("$.username").value("username"));
     }
 
-    @Test
-    void signup_ReturnsSignupResponse() {
-        LoginRequestDto request = new LoginRequestDto("newuser", "pass");
-        SignupResponseDto responseDto = new SignupResponseDto(2L, "newuser");
-        when(authService.signup(request)).thenReturn(responseDto);
-
-        ResponseEntity<SignupResponseDto> response = authController.signup(request);
-
-        assertEquals(200, response.getStatusCode().value(), "Код ответа должен быть 200");
-        assertEquals(responseDto, response.getBody(), "Тело ответа должно совпадать");
-    }
 }

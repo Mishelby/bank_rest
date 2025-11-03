@@ -1,4 +1,4 @@
-package com.example.bankcards.entity.dto;
+package com.example.bankcards.dto;
 
 import com.example.bankcards.entity.enums.Role;
 import com.fasterxml.jackson.annotation.JsonProperty;

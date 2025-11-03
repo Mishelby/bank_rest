@@ -1,7 +1,7 @@
 package com.example.bankcards.mapper;
 
 import com.example.bankcards.entity.UserEntity;
-import com.example.bankcards.entity.dto.UserDto;
+import com.example.bankcards.dto.UserDto;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 

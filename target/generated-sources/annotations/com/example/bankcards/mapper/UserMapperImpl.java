@@ -1,13 +1,13 @@
 package com.example.bankcards.mapper;
 
+import com.example.bankcards.dto.UserDto;
 import com.example.bankcards.entity.UserEntity;
-import com.example.bankcards.entity.dto.UserDto;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-11-02T15:13:47+0300",
+    date = "2025-11-03T11:25:26+0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.8 (Amazon.com Inc.)"
 )
 @Component

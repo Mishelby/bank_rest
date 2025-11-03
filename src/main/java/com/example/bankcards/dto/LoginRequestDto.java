@@ -1,4 +1,4 @@
-package com.example.bankcards.entity.dto;
+package com.example.bankcards.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;

@@ -1,17 +1,16 @@
 package com.example.bankcards.controller;
 
-import com.example.bankcards.entity.dto.CardDto;
+import com.example.bankcards.dto.CardDto;
+import com.example.bankcards.repository.UserRepository;
+import com.example.bankcards.security.AuthUtil;
 import com.example.bankcards.service.AdminCardService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.With;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -21,20 +20,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.example.bankcards.entity.enums.CardOperation.BLOCK;
 import static com.example.bankcards.entity.enums.CardStatus.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@WebMvcTest(
-        controllers = AdminCardsController.class,
-        excludeFilters = {
-                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = com.example.bankcards.security.JwtAuthFilter.class),
-                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = com.example.bankcards.config.SecurityConfig.class)
-        }
-)
+@WebMvcTest(controllers = AdminCardsController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AdminCardsControllerTest {
 
@@ -43,6 +35,12 @@ class AdminCardsControllerTest {
 
     @MockitoBean
     private AdminCardService adminCardService;
+
+    @MockitoBean
+    private AuthUtil authUtil;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -171,26 +169,6 @@ class AdminCardsControllerTest {
                 .andExpect(jsonPath("$.cardStatus").value("DELETED"));
 
         Mockito.verify(adminCardService).performOperation(eq(3L));
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("PATCH /api/v1/admin/cards/{cardID}/operation — должен вернуть статус 200 OK")
-    void deepDeleteCardByCardID_shouldReturnOk() throws Exception {
-        CardDto dto = new CardDto();
-        dto.setCardID(4L);
-        dto.setNumber("**** **** **** 0000");
-        dto.setCardStatus(DELETED);
-
-        Mockito.when(adminCardService.performOperation(4L)).thenReturn(dto);
-
-        mockMvc.perform(patch("/api/v1/admin/cards/4/operation"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.cardID").value(4L))
-                .andExpect(jsonPath("$.cardStatus").value("DELETED"));
-
-        Mockito.verify(adminCardService).performOperation(eq(4L));
     }
 
 }

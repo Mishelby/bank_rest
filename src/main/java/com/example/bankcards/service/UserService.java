@@ -1,11 +1,9 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.dto.*;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.CardStatusRequestEntity;
-import com.example.bankcards.entity.UserEntity;
-import com.example.bankcards.entity.dto.*;
 import com.example.bankcards.mapper.UserMapper;
-import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.CardStatusRequestRepository;
 import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.mapper.CardMapper;
@@ -21,9 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 
 import static com.example.bankcards.entity.enums.CardOperation.BLOCK;
 import static com.example.bankcards.entity.enums.CardStatus.ACTIVE;

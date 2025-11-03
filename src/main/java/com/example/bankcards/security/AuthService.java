@@ -2,13 +2,12 @@ package com.example.bankcards.security;
 
 import com.example.bankcards.dto.SignupResponseDto;
 import com.example.bankcards.entity.UserEntity;
-import com.example.bankcards.entity.dto.LoginRequestDto;
-import com.example.bankcards.entity.dto.LoginResponseDto;
+import com.example.bankcards.dto.LoginRequestDto;
+import com.example.bankcards.dto.LoginResponseDto;
 import com.example.bankcards.exception.AuthException;
 import com.example.bankcards.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
