@@ -3,7 +3,9 @@ package com.example.bankcards.handler;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.enums.CardOperation;
 import com.example.bankcards.entity.enums.CardStatus;
+import com.example.bankcards.exception.CardStatusException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import static com.example.bankcards.entity.enums.CardOperation.DELETE;
@@ -28,7 +30,10 @@ public class DeleteCardHandler implements CardOperationHandler {
         log.info("[INFO] Запрос на удаление карты с ID: [{}]", card.getId());
 
         if (DELETED == card.getCardStatus()) {
-            throw new IllegalArgumentException("Нельзя удалить карту с ID %s!".formatted(card.getId()));
+            throw new CardStatusException(
+                    "Нельзя удалить карту с ID %s!".formatted(card.getId()),
+                    "CARD_STATUS", HttpStatus.BAD_REQUEST.value()
+            );
         }
 
         card.setCardStatus(DELETED);

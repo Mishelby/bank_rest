@@ -4,10 +4,7 @@ import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.entity.enums.converter.CardStatusConverter;
 import com.example.bankcards.entity.enums.converter.CardEncryptorConverter;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 
 import java.math.BigDecimal;
@@ -19,6 +16,7 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class CardEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

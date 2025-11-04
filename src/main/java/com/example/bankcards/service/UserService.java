@@ -4,6 +4,8 @@ import com.example.bankcards.dto.*;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.CardStatusRequestEntity;
 import com.example.bankcards.entity.UserEntity;
+import com.example.bankcards.exception.CardStatusException;
+import com.example.bankcards.exception.InsufficientFundsException;
 import com.example.bankcards.mapper.UserMapper;
 import com.example.bankcards.repository.CardStatusRequestRepository;
 import com.example.bankcards.entity.enums.CardStatus;
@@ -15,12 +17,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.example.bankcards.entity.enums.CardOperation.BLOCK;
 import static com.example.bankcards.entity.enums.CardStatus.ACTIVE;
@@ -107,9 +111,11 @@ public class UserService {
         var userEntityByID = repositoryHelper.findUserEntityByID(userID);
         var cardEntityByID = repositoryHelper.findCardEntityByID(cardID);
 
-        if(!userEntityByID.getCards().contains(cardEntityByID)) {
-            log.warn("Карта с ID: {} не принадлежит пользователю с ID {}",  cardID, cardEntityByID);
-            throw new IllegalArgumentException("Карта не принадлежит пользователю.");
+        if (!userEntityByID.getCards().contains(cardEntityByID)) {
+            log.warn("Карта с ID: {} не принадлежит пользователю с ID {}", cardID, cardEntityByID);
+            throw new CardStatusException(
+                    "Карта не принадлежит данному пользователю!", "CARD_STATUS", HttpStatus.BAD_REQUEST.value()
+            );
         }
 
         return cardMapper.toDto(cardEntityByID);
@@ -137,11 +143,15 @@ public class UserService {
         var cardEntity = repositoryHelper.findCardEntityByID(cardID);
 
         if (!cardEntity.getOwner().getId().equals(userID)) {
-            throw new IllegalArgumentException("Карта не принадлежит данному пользователю!");
+            throw new CardStatusException(
+                    "Карта не принадлежит данному пользователю!", "CARD_STATUS", HttpStatus.BAD_REQUEST.value()
+            );
         }
 
         if (ACTIVE != cardEntity.getCardStatus()) {
-            throw new IllegalArgumentException("Нельзя заблокировать данную карту!");
+            throw new CardStatusException(
+                    "Нельзя заблокировать данную карту!", "CARD_STATUS", HttpStatus.BAD_REQUEST.value()
+            );
         }
 
         var statusRequest = new CardStatusRequestEntity();
@@ -176,55 +186,48 @@ public class UserService {
     }
 
     /**
-     * Выполняет перевод средств между картами пользователя.
+     * Выполняет перевод денежных средств между двумя картами пользователя в рамках одной транзакции.
+     * Для предотвращения конкурентных изменений балансов используется
+     * блокировка записей в базе данных с режимом {@code PESSIMISTIC_WRITE}
+     * при извлечении сущностей карт (через {@code repositoryHelper.findCardEntityByIDAndLockModeType()}).
+     * Это гарантирует, что одновременные транзакции не смогут изменить одни и те же карты до завершения текущей.
      *
-     * @param userID             идентификатор пользователя
-     * @param transferRequestDto DTO с данными перевода (ID карт и сумма)
-     * @return {@link TransferInfoDto} — информация о совершённом переводе
-     * @throws IllegalArgumentException если:
-     *                                  <ul>
-     *                                      <li>одна из карт неактивна</li>
-     *                                      <li>карты не принадлежат пользователю</li>
-     *                                      <li>недостаточно средств</li>
-     *                                      <li>сумма перевода некорректна</li>
-     *                                  </ul>
+     * <p><b>Особенности:</b></p>
+     * <ul>
+     *   <li>Метод потокобезопасен за счёт row-level locking в базе данных.</li>
+     *   <li>При любой ошибке (например, недостаточно средств или невалидные карты)
+     *       транзакция будет откатана.</li>
+     * </ul>
+     *
+     * @param userID               идентификатор пользователя, выполняющего перевод
+     * @param transferRequestDto   DTO с параметрами перевода (ID карт и сумма)
+     * @return DTO с информацией об успешном переводе
+     * @throws IllegalArgumentException если сумма некорректна
+     * @throws EntityNotFoundException  если одна из карт или пользователь не найдены
+     * @throws InsufficientFundsException если на карте отправителя недостаточно средств
+     * @throws CardStatusException если одна из карт имеет неподходящий статус
+     *
+     * @see jakarta.transaction.Transactional
+     * @see org.springframework.data.jpa.repository.Lock
+     * @see jakarta.persistence.LockModeType#PESSIMISTIC_WRITE
      */
     @Transactional
     public TransferInfoDto transferMoney(
             Long userID,
             TransferRequestDto transferRequestDto) {
 
+        isAmountValid(transferRequestDto.amount());
         var amount = transferRequestDto.amount();
 
-        if (isNull(amount) || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            log.warn("[WARN] Некорректная сумма перевода: {}", amount);
-            throw new IllegalArgumentException("Сумма перевода должна быть больше 0");
-        }
+        var cardFromByID = repositoryHelper.findCardEntityByIDAndLockModeType(transferRequestDto.fromCardId());
+        var cardTobyID = repositoryHelper.findCardEntityByIDAndLockModeType(transferRequestDto.toCardId());
 
-        var cardFromByID = repositoryHelper.findCardEntityByID(transferRequestDto.fromCardId());
-        var cardTobyID = repositoryHelper.findCardEntityByID(transferRequestDto.toCardId());
+        isCardStatusValid(cardFromByID, cardTobyID);
 
-        if (ACTIVE != cardFromByID.getCardStatus() || ACTIVE != cardTobyID.getCardStatus()) {
-            log.error("[ERROR] Одна из карт не активна: from={}, to={}",
-                    cardFromByID.getCardStatus(), cardTobyID.getCardStatus());
-            throw new IllegalArgumentException("Нельзя перевести средства! Одна из карт не активна");
-        }
         var userEntityByID = repositoryHelper.findUserEntityByID(userID);
 
-        if (!userEntityByID.getCards().contains(cardFromByID) || !userEntityByID.getCards().contains(cardTobyID)) {
-            log.error("[ERROR] Ошибка! Одна из карт не принадлежит пользователю с ID {}, from={}, to={}",
-                    userID,
-                    cardFromByID.getId(),
-                    cardTobyID.getId()
-            );
-            throw new IllegalArgumentException("Ошибка! Одна из карт не принадлежит пользователю!");
-        }
-
-        if (cardFromByID.getBalance().compareTo(amount) < 0) {
-            log.warn("[WARN] Недостаточно средств: баланс={}, требуется={}",
-                    cardFromByID.getBalance(), amount);
-            throw new IllegalArgumentException("Недостаточно средств для перевода");
-        }
+        isUserContainsCards(userID, userEntityByID, cardFromByID, cardTobyID);
+        isEnoughAmount(cardFromByID, amount);
 
         cardFromByID.setBalance(cardFromByID.getBalance().subtract(transferRequestDto.amount()));
         cardTobyID.setBalance(cardTobyID.getBalance().add(transferRequestDto.amount()));
@@ -241,5 +244,48 @@ public class UserService {
         );
 
         return cardMapper.toTransferInfoDto(cardFromByID, cardTobyID, transferRequestDto.amount());
+    }
+
+    private static void isEnoughAmount(CardEntity cardFromByID, BigDecimal amount) {
+        if (cardFromByID.getBalance().compareTo(amount) < 0) {
+            log.warn("[WARN] Недостаточно средств: баланс={}, требуется={}",
+                    cardFromByID.getBalance(), amount);
+            throw new InsufficientFundsException(
+                    "Недостаточно средств для перевода", "INSUFFICIENT_FUNDS", HttpStatus.BAD_REQUEST.value()
+            );
+        }
+    }
+
+    private static void isUserContainsCards(Long userID,
+                                            UserEntity userEntityByID,
+                                            CardEntity cardFromByID,
+                                            CardEntity cardTobyID) {
+        if (!userEntityByID.getCards().contains(cardFromByID) || !userEntityByID.getCards().contains(cardTobyID)) {
+            log.error("[ERROR] Ошибка! Одна из карт не принадлежит пользователю с ID {}, from={}, to={}",
+                    userID,
+                    cardFromByID.getId(),
+                    cardTobyID.getId()
+            );
+            throw new CardStatusException(
+                    "Ошибка! Одна из карт не принадлежит пользователю!", "CARD_STATUS", HttpStatus.BAD_REQUEST.value()
+            );
+        }
+    }
+
+    private static void isCardStatusValid(CardEntity cardFromByID, CardEntity cardTobyID) {
+        if (ACTIVE != cardFromByID.getCardStatus() || ACTIVE != cardTobyID.getCardStatus()) {
+            log.error("[ERROR] Одна из карт не активна: from={}, to={}",
+                    cardFromByID.getCardStatus(), cardTobyID.getCardStatus());
+            throw new CardStatusException(
+                    "Нельзя перевести средства! Одна из карт не активна", "CARD_STATUS", HttpStatus.BAD_REQUEST.value()
+            );
+        }
+    }
+
+    private static void isAmountValid(BigDecimal amount) {
+        if (isNull(amount) || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("[WARN] Некорректная сумма перевода: {}", amount);
+            throw new IllegalArgumentException("Сумма перевода должна быть больше 0");
+        }
     }
 }

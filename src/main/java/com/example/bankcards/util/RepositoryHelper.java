@@ -51,6 +51,15 @@ public class RepositoryHelper {
         );
     }
 
+    public CardEntity findCardEntityByIDAndLockModeType(Long cardID) throws EntityNotFoundException {
+        return cardRepository.findCardForUpdate(cardID).orElseThrow(
+                () -> {
+                    log.error("[ERROR] Карта с ID: [{}] не найден!", cardID);
+                    return new EntityNotFoundException("Card not found with ID: " + cardID);
+                }
+        );
+    }
+
     public CardEntity findCardEntityByIDAndStatus(Long cardID, CardStatus status) {
         return cardRepository.findCardEntityByIDAndStatus(cardID, status).orElseThrow(
                 () -> {

@@ -2,14 +2,19 @@ package com.example.bankcards.service;
 
 
 
+import com.example.bankcards.dto.CardDto;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.UserEntity;
+import com.example.bankcards.entity.enums.CardOperation;
 import com.example.bankcards.entity.enums.CardStatus;
+import com.example.bankcards.handler.CardOperationHandler;
 import com.example.bankcards.mapper.CardMapper;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.util.RepositoryHelper;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -17,6 +22,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @Disabled
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +40,9 @@ class AdminCardServiceTest {
 
     @Mock
     private CardMapper cardMapper;
+
+    @Mock
+    private Map<CardOperation, CardOperationHandler> cardOperationsHandler;
 
     @InjectMocks
     private AdminCardService adminCardService;
@@ -68,5 +81,68 @@ class AdminCardServiceTest {
         user.setCards(List.of(activeCard, blockedCard, activeCardTo));
     }
 
+    @Test
+    void getCardById_shouldReturnCardDto() {
+        when(repositoryHelper.findCardEntityByID(10L)).thenReturn(activeCard);
+        CardDto cardDto = new CardDto();
+        when(cardMapper.toDto(activeCard)).thenReturn(cardDto);
 
+        CardDto result = adminCardService.getCardById(10L);
+
+        assertNotNull(result);
+        assertEquals(cardDto, result);
+    }
+
+    @Test
+    void getCardById_shouldThrowException_whenCardNotFound() {
+        when(repositoryHelper.findCardEntityByID(10L)).thenThrow(EntityNotFoundException.class);
+
+        assertThrows(EntityNotFoundException.class, () -> adminCardService.getCardById(10L));
+    }
+
+    @Test
+    void createCard_shouldCreateCardSuccessfully() {
+        when(repositoryHelper.findUserEntityByID(1L)).thenReturn(user);
+        when(cardRepository.save(any(CardEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        CardDto cardDto = new CardDto();
+        when(cardMapper.toDto(any(CardEntity.class))).thenReturn(cardDto);
+
+        CardDto result = adminCardService.createCard(1L);
+
+        assertNotNull(result);
+        assertEquals(cardDto, result);
+        verify(cardRepository, times(1)).save(any(CardEntity.class));
+    }
+
+    @Test
+    void createCard_shouldThrowException_whenUserNotFound() {
+        when(repositoryHelper.findUserEntityByID(1L)).thenThrow(EntityNotFoundException.class);
+
+        assertThrows(EntityNotFoundException.class, () -> adminCardService.createCard(1L));
+    }
+
+    @Test
+    void performOperation_shouldPerformCardOperationSuccessfully() {
+        when(repositoryHelper.findCardEntityByID(10L)).thenReturn(activeCard);
+        CardOperationHandler handler = mock(CardOperationHandler.class);
+        when(cardOperationsHandler.get(CardOperation.BLOCK)).thenReturn(handler);
+        CardDto cardDto = new CardDto();
+        when(cardMapper.toDto(activeCard)).thenReturn(cardDto);
+
+        CardDto result = adminCardService.performOperation(10L, CardOperation.BLOCK);
+
+        assertNotNull(result);
+        assertEquals(cardDto, result);
+        verify(handler, times(1)).handle(activeCard);
+    }
+
+    @Test
+    void performOperation_shouldThrowException_whenOperationInvalid() {
+        when(cardOperationsHandler.get(CardOperation.BLOCK)).thenReturn(null);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> adminCardService.performOperation(10L, CardOperation.BLOCK));
+
+        assertTrue(ex.getMessage().contains("Некорректная операция"));
+    }
 }

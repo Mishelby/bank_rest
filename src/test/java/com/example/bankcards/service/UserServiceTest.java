@@ -8,6 +8,8 @@ import com.example.bankcards.dto.CardStatusResponse;
 import com.example.bankcards.dto.TransferRequestDto;
 import com.example.bankcards.dto.TransferInfoDto;
 import com.example.bankcards.entity.enums.CardStatus;
+import com.example.bankcards.exception.CardStatusException;
+import com.example.bankcards.exception.InsufficientFundsException;
 import com.example.bankcards.mapper.CardMapper;
 import com.example.bankcards.repository.CardStatusRequestRepository;
 import com.example.bankcards.util.RepositoryHelper;
@@ -25,8 +27,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.example.bankcards.entity.enums.CardStatus.ACTIVE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -43,8 +47,9 @@ class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
-    private final Long USER_ID = 1L;
-    private final Long CARD_ID = 10L;
+    private static final Long USER_ID = 1L;
+    private static final Long CARD_ID = 10L;
+    private static final Long CARD_TO_ID = 15L;
 
     private CardEntity activeCard;
     private CardEntity blockedCard;
@@ -59,7 +64,7 @@ class UserServiceTest {
         activeCard = new CardEntity();
         activeCard.setId(CARD_ID);
         activeCard.setOwner(user);
-        activeCard.setCardStatus(CardStatus.ACTIVE);
+        activeCard.setCardStatus(ACTIVE);
         activeCard.setBalance(BigDecimal.valueOf(1000));
 
         blockedCard = new CardEntity();
@@ -69,9 +74,9 @@ class UserServiceTest {
         blockedCard.setBalance(BigDecimal.valueOf(500));
 
         activeCardTo = new CardEntity();
-        activeCardTo.setId(30L);
+        activeCardTo.setId(CARD_TO_ID);
         activeCardTo.setOwner(user);
-        activeCardTo.setCardStatus(CardStatus.ACTIVE);
+        activeCardTo.setCardStatus(ACTIVE);
         activeCardTo.setBalance(BigDecimal.valueOf(500));
 
         user.setCards(List.of(activeCard, blockedCard, activeCardTo));
@@ -99,7 +104,7 @@ class UserServiceTest {
         Mockito.doNothing().when(repositoryHelper).isUserExists(USER_ID);
         Mockito.when(repositoryHelper.findCardEntityByID(CARD_ID)).thenReturn(activeCard);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(CardStatusException.class,
                 () -> userService.requestToBlockCard(USER_ID, CARD_ID),
                 "Карта должна принадлежать пользователю!");
     }
@@ -125,7 +130,7 @@ class UserServiceTest {
     @Test
     void findUserCardBalance_shouldReturnBalance_whenCardActive() throws EntityNotFoundException {
         Mockito.doNothing().when(repositoryHelper).isUserExists(USER_ID);
-        Mockito.when(repositoryHelper.findCardEntityByIDAndStatus(CARD_ID, CardStatus.ACTIVE))
+        Mockito.when(repositoryHelper.findCardEntityByIDAndStatus(CARD_ID, ACTIVE))
                 .thenReturn(activeCard);
 
         BigDecimal balance = userService.findUserCardBalance(USER_ID, CARD_ID);
@@ -136,10 +141,10 @@ class UserServiceTest {
 
     @Test
     void transferMoney_shouldSucceed_whenValid() {
-        TransferRequestDto request = new TransferRequestDto(CARD_ID, activeCardTo.getId(), BigDecimal.valueOf(200));
+        TransferRequestDto request = new TransferRequestDto(CARD_ID, CARD_TO_ID, BigDecimal.valueOf(200));
 
-        Mockito.when(repositoryHelper.findCardEntityByID(CARD_ID)).thenReturn(activeCard);
-        Mockito.when(repositoryHelper.findCardEntityByID(activeCardTo.getId())).thenReturn(activeCardTo);
+        Mockito.when(repositoryHelper.findCardEntityByIDAndLockModeType(CARD_ID)).thenReturn(activeCard);
+        Mockito.when(repositoryHelper.findCardEntityByIDAndLockModeType(CARD_TO_ID)).thenReturn(activeCardTo);
         Mockito.when(repositoryHelper.findUserEntityByID(USER_ID)).thenReturn(user);
 
         TransferInfoDto transferInfoDto = TransferInfoDto.builder()
@@ -151,8 +156,9 @@ class UserServiceTest {
                 .cardBalanceTo(BigDecimal.valueOf(700))
                 .build();
 
-        Mockito.when(cardMapper.toTransferInfoDto(activeCard, activeCardTo, BigDecimal.valueOf(200)))
-                .thenReturn(transferInfoDto);
+        doReturn(transferInfoDto)
+                .when(cardMapper)
+                .toTransferInfoDto(activeCard, activeCardTo, BigDecimal.valueOf(200));
 
         TransferInfoDto result = userService.transferMoney(USER_ID, request);
 
@@ -176,10 +182,10 @@ class UserServiceTest {
     void transferMoney_shouldThrowException_whenCardNotActive() {
         TransferRequestDto request = new TransferRequestDto(CARD_ID, blockedCard.getId(), BigDecimal.valueOf(100));
 
-        Mockito.when(repositoryHelper.findCardEntityByID(CARD_ID)).thenReturn(activeCard);
-        Mockito.when(repositoryHelper.findCardEntityByID(blockedCard.getId())).thenReturn(blockedCard);
+        Mockito.when(repositoryHelper.findCardEntityByIDAndLockModeType(CARD_ID)).thenReturn(activeCard);
+        Mockito.when(repositoryHelper.findCardEntityByIDAndLockModeType(blockedCard.getId())).thenReturn(blockedCard);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        CardStatusException exception = assertThrows(CardStatusException.class,
                 () -> userService.transferMoney(USER_ID, request));
 
         assertEquals("Нельзя перевести средства! Одна из карт не активна",
@@ -194,11 +200,11 @@ class UserServiceTest {
         anotherUser.setId(2L);
         anotherUser.setCards(List.of());
 
-        Mockito.when(repositoryHelper.findCardEntityByID(CARD_ID)).thenReturn(activeCard);
-        Mockito.when(repositoryHelper.findCardEntityByID(activeCardTo.getId())).thenReturn(activeCardTo);
+        Mockito.when(repositoryHelper.findCardEntityByIDAndLockModeType(CARD_ID)).thenReturn(activeCard);
+        Mockito.when(repositoryHelper.findCardEntityByIDAndLockModeType(activeCardTo.getId())).thenReturn(activeCardTo);
         Mockito.when(repositoryHelper.findUserEntityByID(USER_ID)).thenReturn(anotherUser);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        CardStatusException exception = assertThrows(CardStatusException.class,
                 () -> userService.transferMoney(USER_ID, request));
 
         assertEquals("Ошибка! Одна из карт не принадлежит пользователю!", exception.getMessage(),
@@ -209,11 +215,11 @@ class UserServiceTest {
     void transferMoney_shouldThrowException_whenInsufficientFunds() {
         TransferRequestDto request = new TransferRequestDto(CARD_ID, activeCardTo.getId(), BigDecimal.valueOf(2000));
 
-        Mockito.when(repositoryHelper.findCardEntityByID(CARD_ID)).thenReturn(activeCard);
-        Mockito.when(repositoryHelper.findCardEntityByID(activeCardTo.getId())).thenReturn(activeCardTo);
+        Mockito.when(repositoryHelper.findCardEntityByIDAndLockModeType(CARD_ID)).thenReturn(activeCard);
+        Mockito.when(repositoryHelper.findCardEntityByIDAndLockModeType(activeCardTo.getId())).thenReturn(activeCardTo);
         Mockito.when(repositoryHelper.findUserEntityByID(USER_ID)).thenReturn(user);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        InsufficientFundsException exception = assertThrows(InsufficientFundsException.class,
                 () -> userService.transferMoney(USER_ID, request));
 
         assertEquals("Недостаточно средств для перевода", exception.getMessage(),

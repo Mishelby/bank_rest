@@ -7,7 +7,7 @@ import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 
 @Slf4j
@@ -16,7 +16,7 @@ public class CardOperationHandlerConfig {
 
     @Bean
     public Map<CardOperation, CardOperationHandler> cardOperationsHandler(ListableBeanFactory beanFactory) {
-        Map<CardOperation, CardOperationHandler> map = new HashMap<>();
+        Map<CardOperation, CardOperationHandler> map = new EnumMap<>(CardOperation.class);
 
         Map<String, CardOperationHandler> beans = beanFactory.getBeansOfType(CardOperationHandler.class);
 

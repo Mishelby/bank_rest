@@ -3,6 +3,7 @@ package com.example.bankcards.service;
 import com.example.bankcards.entity.UserEntity;
 import com.example.bankcards.entity.enums.Role;
 import com.example.bankcards.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+
+import static java.util.Objects.nonNull;
 
 /**
  * Сервис для предварительной загрузки (инициализации) учетной записи администратора в систему.
@@ -26,7 +29,7 @@ import java.util.Optional;
  *   <li>Если такого пользователя нет — создать его с ролью {@link Role#ADMIN} и паролем
  *       из параметра {@code data.admin.password}.</li>
  * </ul>
- *
+ * <p>
  * Пример настройки в application.yml:
  * <pre>
  * preload:
@@ -47,7 +50,17 @@ public class PreloadAdminService implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
 
     @Value("${data.admin.password}")
-    private String adminPassword;
+    private String adminPasswordString;
+
+    private char[] adminPassword;
+
+    @PostConstruct
+    public void init() {
+        if (nonNull(adminPasswordString)) {
+            adminPassword = adminPasswordString.toCharArray();
+            adminPasswordString = null;
+        }
+    }
 
     /**
      * Точка входа при запуске приложения. Запускает процесс инициализации администратора.
@@ -70,7 +83,7 @@ public class PreloadAdminService implements CommandLineRunner {
             userRepository.save(
                     UserEntity.builder()
                             .username("admin")
-                            .password(passwordEncoder.encode(adminPassword))
+                            .password(passwordEncoder.encode(new String(adminPassword)))
                             .role(Role.ADMIN)
                             .enabled(true)
                             .build()

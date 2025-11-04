@@ -46,6 +46,24 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<DefaultErrorMessage> handleEntityNotFoundException(
+            ApiException ex,
+            HttpServletRequest request) {
+
+        log.warn("[WARN] API Exception: [{}] {} (path: {})",
+                ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
+
+        return getResponseEntity(
+                "API error",
+                ex.getMessage(),
+                ex.getHttpStatus(),
+                request.getRequestURI(),
+                null,
+                ex.getErrorCode()
+        );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<DefaultErrorMessage> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex,

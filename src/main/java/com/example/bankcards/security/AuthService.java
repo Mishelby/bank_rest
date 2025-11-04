@@ -5,6 +5,7 @@ import com.example.bankcards.entity.UserEntity;
 import com.example.bankcards.dto.LoginRequestDto;
 import com.example.bankcards.dto.LoginResponseDto;
 import com.example.bankcards.exception.AuthException;
+import com.example.bankcards.exception.SignupException;
 import com.example.bankcards.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -54,7 +55,9 @@ public class AuthService {
         var user = (UserEntity) manager.getPrincipal();
 
         if (!user.isEnabled()) {
-            throw new AuthException("Аккаунт недоступен!", String.valueOf(HttpStatus.UNAUTHORIZED));
+            throw new AuthException(
+                    "Аккаунт недоступен!", String.valueOf(HttpStatus.UNAUTHORIZED), HttpStatus.UNAUTHORIZED.value()
+            );
         }
 
         String token = authUtil.generateAccessToken(user);
@@ -82,7 +85,7 @@ public class AuthService {
      */
     public SignupResponseDto signup(LoginRequestDto loginRequestDto) throws IllegalArgumentException {
         if (userRepository.existsByUsername(loginRequestDto.username())) {
-            throw new IllegalArgumentException("Username is already in use");
+            throw new SignupException("Username is already in use", "SIGN_UP", HttpStatus.BAD_REQUEST.value());
         }
 
         var encode = passwordEncoder.encode(loginRequestDto.password());

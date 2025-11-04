@@ -5,7 +5,6 @@ import com.example.bankcards.dto.SpecificationData;
 import com.example.bankcards.entity.CardEntity;
 import com.example.bankcards.entity.CardStatusRequestEntity;
 import com.example.bankcards.dto.CardDto;
-import com.example.bankcards.entity.UserEntity;
 import com.example.bankcards.entity.enums.CardOperation;
 import com.example.bankcards.entity.enums.CardStatus;
 import com.example.bankcards.handler.CardOperationHandler;
@@ -18,8 +17,8 @@ import com.example.bankcards.util.RepositoryHelper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +28,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.example.bankcards.entity.enums.CardStatus.*;
 import static com.example.bankcards.util.RepositoryHelper.getCardDtos;
@@ -52,7 +50,8 @@ public class AdminCardService {
     /**
      * Срок действия карты по умолчанию — 10 лет.
      */
-    public static final LocalDate EXPIRED_DATE = LocalDate.now().plusYears(10);
+    @Value("${data.expired.value}")
+    public int expiredValue;
 
     private final Map<CardOperation, CardOperationHandler> cardOperationsHandler;
     private final CardStatusMapper cardStatusMapper;
@@ -146,7 +145,7 @@ public class AdminCardService {
         cardEntity.setOwner(userEntity);
         cardEntity.setNumber(cardNumber);
         cardEntity.setCardStatus(ACTIVE);
-        cardEntity.setExpirationDate(EXPIRED_DATE);
+        cardEntity.setExpirationDate(LocalDate.now().plusYears(expiredValue));
 
         CardEntity savedCard = cardRepository.save(cardEntity);
         log.info("[INFO] Сохранённая сущность карты пользователя: [{}]", cardEntity);
@@ -166,13 +165,13 @@ public class AdminCardService {
     //TODO переделать
     @Transactional
     public CardDto performOperation(Long cardID, CardOperation cardOperation) throws EntityNotFoundException {
-        var cardEntity = repositoryHelper.findCardEntityByID(cardID);
-        CardOperationHandler cardOperationHandler = cardOperationsHandler.get(cardOperation);
+        var cardOperationHandler = cardOperationsHandler.get(cardOperation);
 
         if (isNull(cardOperationHandler)) {
             throw new IllegalArgumentException("Некорректная операция %s".formatted(cardOperation));
         }
 
+        var cardEntity = repositoryHelper.findCardEntityByID(cardID);
         cardOperationHandler.handle(cardEntity);
 
         return cardMapper.toDto(cardEntity);
