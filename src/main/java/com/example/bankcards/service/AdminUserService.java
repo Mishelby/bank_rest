@@ -22,7 +22,6 @@ import java.util.List;
 
 import static com.example.bankcards.entity.enums.CardStatus.ACTIVE;
 import static com.example.bankcards.util.RepositoryHelper.getPageableSortingByAscID;
-import static java.util.Objects.nonNull;
 
 /**
  * Сервис для работы с административными операциями над пользователями.

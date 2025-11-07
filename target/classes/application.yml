@@ -43,5 +43,7 @@ preload:
   admin: true
 
 data:
+  expired:
+    value: 10
   admin:
     password: ${ADMIN_PASSWORD}

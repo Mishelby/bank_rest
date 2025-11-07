@@ -24,7 +24,6 @@ com\example\bankcards\dto\SpecificationData$SpecificationDataBuilder.class
 com\example\bankcards\controller\AuthController.class
 com\example\bankcards\security\AuthService.class
 com\example\bankcards\entity\enums\converter\CardEncryptorConverter.class
-com\example\bankcards\exception\UnauthorizedException.class
 com\example\bankcards\util\GenerateCardNumber.class
 com\example\bankcards\entity\UserEntity$UserEntityBuilder.class
 com\example\bankcards\repository\UserRepository.class
@@ -35,7 +34,6 @@ com\example\bankcards\dto\CardStatusRequestDto$CardStatusRequestDtoBuilder.class
 com\example\bankcards\exception\DefaultErrorMessage$DefaultErrorMessageBuilder.class
 com\example\bankcards\security\JwtAuthFilter.class
 com\example\bankcards\mapper\UserMapper.class
-com\example\bankcards\service\AdminCardService$1.class
 com\example\bankcards\config\SecurityConfig.class
 com\example\bankcards\entity\enums\CardStatus.class
 com\example\bankcards\exception\DefaultErrorMessage.class
